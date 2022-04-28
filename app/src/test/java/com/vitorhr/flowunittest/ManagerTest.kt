@@ -5,8 +5,11 @@ import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class ManagerTest {
@@ -16,12 +19,14 @@ class ManagerTest {
 
     private lateinit var manager: Manager
 
+    @Before
     fun onBefore() {
         MockKAnnotations.init(this)
 
         manager = Manager(flowInt)
     }
 
+    @After
     fun tearDown() {
         clearAllMocks()
     }
@@ -47,7 +52,7 @@ class ManagerTest {
         }
 
         // Act
-        val result = manager.callFlowIntOneToTen()
+        val result = manager.callFlowIntOneToTen().toList()
 
         // Assert
         assertEquals(expectedResult, result)
