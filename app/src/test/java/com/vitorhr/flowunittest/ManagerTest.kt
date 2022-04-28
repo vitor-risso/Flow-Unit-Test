@@ -1,11 +1,19 @@
 package com.vitorhr.flowunittest
 
+import com.vitorhr.flowunittest.Manager.Companion.ERROR_CODE
+import com.vitorhr.flowunittest.Manager.Companion.SUCCESS_CODE
 import io.mockk.MockKAnnotations
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -17,13 +25,16 @@ class ManagerTest {
     @MockK
     private lateinit var flowInt: FlowInt
 
+    @MockK
+    private lateinit var timeOutWithFlow: TimeOutWithFlow
+
     private lateinit var manager: Manager
 
     @Before
     fun onBefore() {
         MockKAnnotations.init(this)
 
-        manager = Manager(flowInt)
+        manager = Manager(flowInt, timeOutWithFlow)
     }
 
     @After
@@ -56,6 +67,32 @@ class ManagerTest {
 
         // Assert
         assertEquals(expectedResult, result)
+    }
 
+    @Test
+    fun `when operation takes more then timeout, should return ERROR_CODE`() = runBlockingTest {
+        // Mock
+        coEvery { timeOutWithFlow.timeoutFlow() } coAnswers {
+            delay(900000)
+            flowOf(0)
+        }
+
+        // Act
+        val result = manager.timeOut().toList()
+
+        // Assert
+        assertEquals(ERROR_CODE, result.first())
+    }
+
+    @Test
+    fun `when the operation takes less then timeout, should return SUCCESS_CODE`() = runBlocking {
+        // Mock
+        coEvery { timeOutWithFlow.timeoutFlow() } returns flowOf(TimeOutWithFlow.SUCCESS_CODE)
+
+        // Act
+        val result = manager.timeOut().toList()
+
+        // Assert
+        assertEquals(SUCCESS_CODE, result.first())
     }
 }
